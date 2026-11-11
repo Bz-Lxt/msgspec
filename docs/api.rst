@@ -144,6 +144,10 @@ Inspect
 .. autofunction:: is_struct_type
 .. autofunction:: type_info
 .. autofunction:: multi_type_info
+.. autofunction:: max_json_encoded_size
+.. autofunction:: max_msgpack_encoded_size
+.. autoexception:: UnboundedTypeError
+    :show-inheritance:
 .. autoclass:: Type
 .. autoclass:: Metadata
 .. autoclass:: AnyType

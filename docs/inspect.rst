@@ -146,5 +146,61 @@ found `here
 particular, take a look at the large if-else statement in ``_to_schema``.
 
 
+Computing Encoded Size Bounds
+=============================
+
+When values are known to conform to a type and its :doc:`constraints`, the
+introspection module can pre-compute a **safe upper bound** on the size of
+their encoded form, in bytes. This is useful for pre-allocating fixed-size
+frames or shared-memory buffers without serializing a value first.
+
+.. code-block:: python
+
+    >>> from typing import Annotated
+    >>> from msgspec import Meta
+    >>> import msgspec.inspect as mi
+
+    >>> BoundedStr = Annotated[str, Meta(max_length=8)]
+    >>> mi.max_json_encoded_size(BoundedStr)
+    50
+    >>> mi.max_msgpack_encoded_size(BoundedStr)
+    34
+
+The bounds compose through nested structs (including array-like and tagged
+structs), unions, containers and every other supported type:
+
+.. code-block:: python
+
+    >>> class Point(msgspec.Struct):
+    ...     x: Annotated[int, Meta(ge=-1000, le=1000)]
+    ...     y: Annotated[int, Meta(ge=-1000, le=1000)]
+
+    >>> class Frame(msgspec.Struct):
+    ...     points: Annotated[list[Point], Meta(max_length=4)]
+
+    >>> mi.max_msgpack_encoded_size(Frame)
+    143
+
+A finite bound only exists when every branch of a type has a statically
+knowable size limit. If no bound exists - for example an unconstrained
+``str`` or container, an ``Any`` value, a custom type, opaque content like
+`msgspec.Raw`, or a recursive type whose values may nest arbitrarily deep -
+an `~msgspec.inspect.UnboundedTypeError` is raised explaining the offending
+branch:
+
+.. code-block:: python
+
+    >>> mi.max_json_encoded_size(str)
+    Traceback (most recent call last):
+        ...
+    msgspec.inspect.UnboundedTypeError: cannot determine a finite JSON
+    encoded-size upper bound for `str`: an explicit `Meta(max_length=...)`
+    constraint is required to bound the size of conforming values
+
+Note that JSON integers have arbitrary precision, so a JSON ``int`` needs a
+bound on both ends (``ge``/``le`` or ``gt``/``lt``), while MessagePack
+integers are always bounded by their 64-bit encoding.
+
+
 .. _OpenAPI: https://www.openapis.org/
 .. _hypothesis: https://hypothesis.readthedocs.io/en/latest/

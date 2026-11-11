@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Add `msgspec.inspect.max_json_encoded_size` and
+  `msgspec.inspect.max_msgpack_encoded_size`, which compute a safe upper
+  bound on the encoded size of any value conforming to a type and its
+  constraints. Bounds compose through nested structs, union tags, containers
+  and other compound types; types without a finite limit (unconstrained
+  containers, `Any`, custom types, `Raw`, recursive types, ...) raise the new
+  `msgspec.inspect.UnboundedTypeError` instead.
 - Include string Literal and Enum dictionary key constraints in generated JSON
   Schema `propertyNames`.
 - Fix JSON Schema references for dynamically defined types with empty names,
